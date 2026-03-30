@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Metodix — Удаление аккаунта</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#121212;color:#e0e0e0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{background:#1e1e1e;border-radius:16px;padding:32px;max-width:480px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+h1{font-size:24px;margin-bottom:8px;color:#bb86fc}
+.subtitle{color:#aaa;margin-bottom:24px;font-size:14px}
+.warning{background:#2d1b1b;border:1px solid #cf6679;border-radius:8px;padding:16px;margin-bottom:24px}
+.warning h3{color:#cf6679;margin-bottom:8px;font-size:14px}
+.warning ul{padding-left:20px;font-size:13px;color:#e0a0a0}
+.warning ul li{margin-bottom:4px}
+.warning p{font-size:13px;color:#cf6679;font-weight:600;margin-top:8px}
+label{display:block;font-size:14px;color:#aaa;margin-bottom:6px}
+input{width:100%;padding:12px;border-radius:8px;border:1px solid #333;background:#2a2a2a;color:#e0e0e0;font-size:16px;outline:none;margin-bottom:16px}
+input:focus{border-color:#bb86fc}
+button{width:100%;padding:14px;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#bb86fc;color:#121212}
+.btn-danger{background:#cf6679;color:#fff}
+.btn-secondary{background:transparent;border:1px solid #555;color:#aaa;margin-top:8px}
+.msg{padding:12px;border-radius:8px;margin-bottom:16px;font-size:14px}
+.msg-ok{background:#1b2d1b;border:1px solid #4caf50;color:#81c784}
+.msg-err{background:#2d1b1b;border:1px solid #cf6679;color:#e0a0a0}
+.success-card{text-align:center;padding:48px 32px}
+.success-card .icon{font-size:48px;margin-bottom:16px}
+.success-card h2{color:#4caf50;margin-bottom:8px}
+.lang{position:absolute;top:16px;right:16px}
+.lang a{color:#bb86fc;text-decoration:none;font-size:13px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="lang"><a id="lang-toggle" href="#">English</a></div>
+<div class="card">
+  <h1>Metodix</h1>
+  <p class="subtitle" id="page-subtitle">Удаление аккаунта и данных</p>
+
+  <div class="warning">
+    <h3 id="warn-title">Будут удалены:</h3>
+    <ul>
+      <li id="w1">Ваш аккаунт и профиль тренера</li>
+      <li id="w2">Все клиенты и их данные</li>
+      <li id="w3">Все программы тренировок</li>
+      <li id="w4">Все сессии и записи подходов</li>
+      <li id="w5">Ваши пользовательские упражнения</li>
+    </ul>
+    <p id="warn-footer">Это действие необратимо. Данные не подлежат восстановлению.</p>
+  </div>
+
+  <div id="step1">
+    <label id="email-label">Введите email вашего аккаунта</label>
+    <input type="email" id="email" placeholder="email@example.com" onkeydown="if(event.key==='Enter')sendOtp()"/>
+    <div id="msg" class="msg hidden"></div>
+    <button id="btn-send" class="btn-primary" onclick="sendOtp()">Отправить код</button>
+  </div>
+
+  <div id="step2" class="hidden">
+    <div class="msg msg-ok" id="otp-sent-msg">Код отправлен на вашу почту. Проверьте входящие и спам.</div>
+    <label id="otp-label">Введите код из письма</label>
+    <input type="text" id="otp" placeholder="123456" maxlength="6" inputmode="numeric" onkeydown="if(event.key==='Enter')confirmDelete()"/>
+    <div id="msg2" class="msg hidden"></div>
+    <button id="btn-delete" class="btn-danger" onclick="confirmDelete()">Удалить аккаунт</button>
+    <button id="btn-cancel" class="btn-secondary" onclick="location.reload()">Отмена</button>
+  </div>
+
+  <div id="step3" class="hidden success-card">
+    <div class="icon">&#10003;</div>
+    <h2 id="done-title">Аккаунт удалён</h2>
+    <p id="done-msg" style="color:#aaa">Ваш аккаунт и все данные были полностью удалены.</p>
+  </div>
+</div>
+
+<script>
+const API = "https://zyxvnnfddbsermoppyqb.supabase.co/functions/v1/delete-account";
+
+const i18n = {
+  ru: {
+    subtitle: "Удаление аккаунта и данных",
+    warnTitle: "Будут удалены:",
+    w1: "Ваш аккаунт и профиль тренера",
+    w2: "Все клиенты и их данные",
+    w3: "Все программы тренировок",
+    w4: "Все сессии и записи подходов",
+    w5: "Ваши пользовательские упражнения",
+    warnFooter: "Это действие необратимо. Данные не подлежат восстановлению.",
+    emailLabel: "Введите email вашего аккаунта",
+    sendCode: "Отправить код",
+    sending: "Отправка...",
+    otpSent: "Код отправлен на вашу почту. Проверьте входящие и спам.",
+    otpLabel: "Введите код из письма",
+    deleteBtn: "Удалить аккаунт",
+    deleting: "Удаление...",
+    cancel: "Отмена",
+    doneTitle: "Аккаунт удалён",
+    doneMsg: "Ваш аккаунт и все данные были полностью удалены.",
+    errGeneric: "Произошла ошибка. Попробуйте позже.",
+    langToggle: "English"
+  },
+  en: {
+    subtitle: "Account & Data Deletion",
+    warnTitle: "The following will be deleted:",
+    w1: "Your account and trainer profile",
+    w2: "All clients and their data",
+    w3: "All workout programs",
+    w4: "All sessions and set logs",
+    w5: "Your custom exercises",
+    warnFooter: "This action is irreversible. Data cannot be recovered.",
+    emailLabel: "Enter your account email",
+    sendCode: "Send Code",
+    sending: "Sending...",
+    otpSent: "Code sent to your email. Check inbox and spam.",
+    otpLabel: "Enter code from email",
+    deleteBtn: "Delete Account",
+    deleting: "Deleting...",
+    cancel: "Cancel",
+    doneTitle: "Account Deleted",
+    doneMsg: "Your account and all data have been permanently deleted.",
+    errGeneric: "An error occurred. Please try again later.",
+    langToggle: "Русский"
+  }
+};
+
+let lang = (new URLSearchParams(location.search).get("lang") || "ru");
+if (lang !== "en") lang = "ru";
+
+function applyLang() {
+  const t = i18n[lang];
+  document.documentElement.lang = lang;
+  document.title = "Metodix — " + t.subtitle;
+  document.getElementById("page-subtitle").textContent = t.subtitle;
+  document.getElementById("warn-title").textContent = t.warnTitle;
+  document.getElementById("w1").textContent = t.w1;
+  document.getElementById("w2").textContent = t.w2;
+  document.getElementById("w3").textContent = t.w3;
+  document.getElementById("w4").textContent = t.w4;
+  document.getElementById("w5").textContent = t.w5;
+  document.getElementById("warn-footer").textContent = t.warnFooter;
+  document.getElementById("email-label").textContent = t.emailLabel;
+  document.getElementById("btn-send").textContent = t.sendCode;
+  document.getElementById("otp-sent-msg").textContent = t.otpSent;
+  document.getElementById("otp-label").textContent = t.otpLabel;
+  document.getElementById("btn-delete").textContent = t.deleteBtn;
+  document.getElementById("btn-cancel").textContent = t.cancel;
+  document.getElementById("done-title").textContent = t.doneTitle;
+  document.getElementById("done-msg").textContent = t.doneMsg;
+  document.getElementById("lang-toggle").textContent = t.langToggle;
+  document.getElementById("lang-toggle").href = "?lang=" + (lang === "ru" ? "en" : "ru");
+}
+applyLang();
+
+document.getElementById("lang-toggle").addEventListener("click", function(e) {
+  e.preventDefault();
+  lang = lang === "ru" ? "en" : "ru";
+  history.replaceState(null, "", "?lang=" + lang);
+  applyLang();
+});
+
+let userEmail = "";
+
+async function sendOtp() {
+  const t = i18n[lang];
+  const email = document.getElementById("email").value.trim();
+  if (!email) return;
+  const btn = document.getElementById("btn-send");
+  const msg = document.getElementById("msg");
+  btn.disabled = true;
+  btn.textContent = t.sending;
+  msg.className = "msg hidden";
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({action: "send-otp", email, lang})
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msg.className = "msg msg-err";
+      msg.textContent = data.error || t.errGeneric;
+      btn.disabled = false;
+      btn.textContent = t.sendCode;
+      return;
+    }
+    userEmail = email;
+    document.getElementById("step1").classList.add("hidden");
+    document.getElementById("step2").classList.remove("hidden");
+  } catch(e) {
+    msg.className = "msg msg-err";
+    msg.textContent = t.errGeneric;
+    btn.disabled = false;
+    btn.textContent = t.sendCode;
+  }
+}
+
+async function confirmDelete() {
+  const t = i18n[lang];
+  const otp = document.getElementById("otp").value.trim();
+  if (!otp) return;
+  const btn = document.getElementById("btn-delete");
+  const msg2 = document.getElementById("msg2");
+  btn.disabled = true;
+  btn.textContent = t.deleting;
+  msg2.className = "msg hidden";
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({action: "confirm-delete", email: userEmail, otp, lang})
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msg2.className = "msg msg-err";
+      msg2.textContent = data.error || t.errGeneric;
+      btn.disabled = false;
+      btn.textContent = t.deleteBtn;
+      return;
+    }
+    document.getElementById("step2").classList.add("hidden");
+    document.getElementById("step3").classList.remove("hidden");
+  } catch(e) {
+    msg2.className = "msg msg-err";
+    msg2.textContent = t.errGeneric;
+    btn.disabled = false;
+    btn.textContent = t.deleteBtn;
+  }
+}
+</script>
+</body>
+</html>
