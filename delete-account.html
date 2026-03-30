@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -125,8 +125,8 @@ const i18n = {
   }
 };
 
-let lang = (new URLSearchParams(location.search).get("lang") || "ru");
-if (lang !== "en") lang = "ru";
+let lang = (new URLSearchParams(location.search).get("lang") || "en");
+if (lang !== "ru") lang = "en";
 
 function applyLang() {
   const t = i18n[lang];
